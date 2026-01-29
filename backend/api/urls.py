@@ -1,20 +1,26 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from rest_framework import routers
 
-from api.views import IngredientsViewSet, RecipesViewSet, TagsViewSet
+from api.views import (
+    CustomUserViewSet,
+    IngredientsViewSet,
+    RecipesViewSet,
+    TagsViewSet
+)
 
 
 router = routers.DefaultRouter()
 router.register(r'tags', TagsViewSet, basename='tags')
 router.register(r'recipes', RecipesViewSet, basename='recipes')
 router.register(r'ingredients', IngredientsViewSet, basename='ingredients')
-#router.register(r'users', UserViewSet)
+router.register(r'users', CustomUserViewSet, basename='users')
 
 
 urlpatterns = [
     path('', include(router.urls)),
-    re_path(r'auth/', include('djoser.urls.authtoken')),
+    path('', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
 ]
