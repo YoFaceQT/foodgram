@@ -114,66 +114,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
         elif request.method == 'DELETE':
             return delete_object(Cart, user, recipe)
 
-    @action(
-        detail=False,
-        methods=['GET'],
-        permission_classes=[permissions.IsAuthenticated]
-    )
-    def download_shopping_cart(self, request):
-        """Скачивание списка покупок"""
-        user = request.user
-        cart_items = Cart.objects.filter(user=user)
-
-        if not cart_items.exists():
-            return Response(
-                {'detail': 'Список покупок пуст'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Собираем ингредиенты
-        ingredients_dict = {}
-        for cart_item in cart_items:
-            recipe = cart_item.recipe
-            ingredients = IngredientInRecipes.objects.filter(recipe=recipe)
-
-            for ingredient_rel in ingredients:
-                ingredient = ingredient_rel.ingredient
-                amount = ingredient_rel.amount
-
-                if ingredient.id in ingredients_dict:
-                    ingredients_dict[ingredient.id]['amount'] += amount
-                else:
-                    ingredients_dict[ingredient.id] = {
-                        'name': ingredient.name,
-                        'measurement_unit': ingredient.measurement_unit,
-                        'amount': amount
-                    }
-
-        # Формируем текстовый файл
-        shopping_list = []
-        shopping_list.append("Список покупок:\n")
-        shopping_list.append("=" * 40 + "\n")
-
-        for ingredient_data in ingredients_dict.values():
-            shopping_list.append(
-                f"• {ingredient_data['name']} "
-                f"({ingredient_data['measurement_unit']}): "
-                f"{ingredient_data['amount']}\n"
-            )
-
-        shopping_list.append("\n" + "=" * 40)
-        shopping_list.append("\nПриятного аппетита!")
-
-        response = HttpResponse(
-            ''.join(shopping_list),
-            content_type='text/plain'
-        )
-        response['Content-Disposition'] = (
-            'attachment; filename="shopping_list.txt"'
-        )
-
-        return response
-
 
 class CustomUserViewSet(UserViewSet):
     """ Вьюсет для модели User. """

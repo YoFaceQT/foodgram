@@ -10,7 +10,6 @@ from recipes.models import Tags, Recipes, Ingredients, IngredientInRecipes, Favo
 from users.models import User
 
 
-
 class TagsSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Tags"""
     class Meta:
@@ -143,47 +142,6 @@ class AvatarSerializer(serializers.ModelSerializer):
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance
-
-
-class RecipeDetailSerializer(serializers.ModelSerializer):
-    """Сериализатор для детального отображения рецепта."""
-    author = UserSerializer(read_only=True)
-    tags = TagsSerializer(many=True, read_only=True)
-    ingredients = IngredientInRecipesSerializer(
-        source='ingredientinrecipes_set',
-        many=True,
-        read_only=True
-    )
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
-    image = Base64ImageField(required=False, allow_null=True)
-
-    class Meta:
-        model = Recipes
-        fields = (
-            'id',
-            'tags',
-            'author',
-            'ingredients',
-            'is_favorited',
-            'is_in_shopping_cart',
-            'name',
-            'image',
-            'text',
-            'cooking_time'
-        )
-
-    def get_is_favorited(self, obj):
-        user = self.context.get('request').user
-        if user and user.is_authenticated:
-            return Favorite.objects.filter(user=user, recipe=obj).exists()
-        return False
-
-    def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
-        if user and user.is_authenticated:
-            return Cart.objects.filter(user=user, recipe=obj).exists()
-        return False
 
 
 class RecipeIngredientCreateSerializer(serializers.Serializer):
@@ -335,3 +293,44 @@ class CustomUserSerializer(UserSerializer):
             else:
                 return obj.avatar.url
         return None
+
+
+class RecipeDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор для детального отображения рецепта."""
+    author = CustomUserSerializer(read_only=True)
+    tags = TagsSerializer(many=True, read_only=True)
+    ingredients = IngredientInRecipesSerializer(
+        source='ingredientinrecipes_set',
+        many=True,
+        read_only=True
+    )
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
+    image = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Recipes
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
+            'name',
+            'image',
+            'text',
+            'cooking_time'
+        )
+
+    def get_is_favorited(self, obj):
+        user = self.context.get('request').user
+        if user and user.is_authenticated:
+            return Favorite.objects.filter(user=user, recipe=obj).exists()
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context.get('request').user
+        if user and user.is_authenticated:
+            return Cart.objects.filter(author=user, recipe=obj).exists()
+        return False
