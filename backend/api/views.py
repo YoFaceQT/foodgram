@@ -3,10 +3,12 @@ from djoser.views import UserViewSet
 
 from django.shortcuts import HttpResponse
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -177,6 +179,7 @@ class CustomUserViewSet(UserViewSet):
     """ Вьюсет для модели User. """
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
+    permission_classes = [AdminAuthorOrReadOnly]
 
     @action(
         detail=True,
@@ -215,3 +218,46 @@ class CustomUserViewSet(UserViewSet):
             many=True
         )
         return self.get_paginated_response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=['PUT', 'PATCH', 'DELETE'],
+        url_path='me/avatar',
+        url_name='me-avatar',
+        permission_classes=[IsAuthenticated],
+        # Убрать parser_classes или добавить JSONParser
+    )
+    def avatar(self, request):
+        """Загрузка, обновление или удаление аватара текущего пользователя."""
+        user = request.user
+
+        if request.method in ['PUT', 'PATCH']:
+            serializer = AvatarSerializer(
+                user,
+                data=request.data,
+                partial=(request.method == 'PATCH')
+            )
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        elif request.method == 'DELETE':
+            # Удаляем аватар
+            if user.avatar:
+                user.avatar.delete(save=False)
+                user.avatar = None
+                user.save()
+                return Response(
+                    {'detail': 'Аватар успешно удален'},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            return Response(
+                {'detail': 'Аватар не найден'},
+                status=status.HTTP_404_NOT_FOUND
+            )

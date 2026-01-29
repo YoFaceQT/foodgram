@@ -132,14 +132,15 @@ class Base64ImageField(serializers.ImageField):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
-    avatar = Base64ImageField(required=True, allow_null=True)
+    avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ("avatar",)
+        fields = ('avatar',)
+        read_only_fields = ('id', 'email', 'username', 'first_name', 'last_name')
 
     def update(self, instance, validated_data):
-        instance.avatar = validated_data.get("avatar", instance.avatar)
+        instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance
 
@@ -301,6 +302,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 class CustomUserSerializer(UserSerializer):
     """ Сериализатор для кастомной модели User. """
     is_subscribed = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -311,6 +313,7 @@ class CustomUserSerializer(UserSerializer):
             'first_name',
             'last_name',
             'is_subscribed',
+            'avatar',
         )
 
     def get_is_subscribed(self, obj):
@@ -322,3 +325,13 @@ class CustomUserSerializer(UserSerializer):
             user=user,
             author=obj
         ).exists()
+
+    def get_avatar(self, obj):
+        """Возвращаем URL аватара или None."""
+        request = self.context.get('request')
+        if obj.avatar:
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            else:
+                return obj.avatar.url
+        return None
