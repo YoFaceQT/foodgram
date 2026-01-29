@@ -225,7 +225,6 @@ class CustomUserViewSet(UserViewSet):
         url_path='me/avatar',
         url_name='me-avatar',
         permission_classes=[IsAuthenticated],
-        # Убрать parser_classes или добавить JSONParser
     )
     def avatar(self, request):
         """Загрузка, обновление или удаление аватара текущего пользователя."""
@@ -248,7 +247,6 @@ class CustomUserViewSet(UserViewSet):
             )
 
         elif request.method == 'DELETE':
-            # Удаляем аватар
             if user.avatar:
                 user.avatar.delete(save=False)
                 user.avatar = None
@@ -261,3 +259,17 @@ class CustomUserViewSet(UserViewSet):
                 {'detail': 'Аватар не найден'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+    @action(
+        detail=False,
+        methods=['GET'],
+        permission_classes=[IsAuthenticated]
+    )
+    def me(self, request):
+        """Получение данных текущего пользователя."""
+        if not request.user.is_authenticated:
+            return Response(
+                {'detail': 'Учетные данные не были предоставлены.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        return super().me(request)
