@@ -161,10 +161,11 @@ class RecipeIngredientCreateSerializer(serializers.Serializer):
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления рецептов."""
-    ingredients = RecipeIngredientCreateSerializer(many=True)
+    ingredients = RecipeIngredientCreateSerializer(many=True, required=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tags.objects.all(),
-        many=True
+        many=True,
+        required=True
     )
     image = Base64ImageField(required=True)
 
@@ -183,46 +184,30 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
 
-        try:
-            recipe = Recipes.objects.create(**validated_data)
-            recipe.tags.set(tags_data)
+        recipe = Recipes.objects.create(**validated_data)
+        recipe.tags.set(tags_data)
+        for ingredient_data in ingredients_data:
+            IngredientInRecipes.objects.create(
+                recipe=recipe,
+                ingredient=ingredient_data['id'],
+                amount=ingredient_data['amount']
+            )
 
-            # Создаем связи с ингредиентами
-            for ingredient_data in ingredients_data:
-                # ingredient_data['id'] уже является объектом Ingredients
-                # после валидации в RecipeIngredientCreateSerializer
-                IngredientInRecipes.objects.create(
-                    recipe=recipe,
-                    ingredient=ingredient_data['id'],  # Это объект Ingredients
-                    amount=ingredient_data['amount']
-                )
-
-            return recipe
-        except Exception as e:
-            # Добавим логирование для отладки
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Ошибка при создании рецепта: {str(e)}")
-            raise
+        return recipe
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients', None)
         tags_data = validated_data.pop('tags', None)
 
-        # Обновляем основные поля
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Обновляем теги
         if tags_data is not None:
             instance.tags.set(tags_data)
 
-        # Обновляем ингредиенты
         if ingredients_data is not None:
-            # Удаляем старые связи
             IngredientInRecipes.objects.filter(recipe=instance).delete()
-            # Создаем новые связи
             for ingredient_data in ingredients_data:
                 IngredientInRecipes.objects.create(
                     recipe=instance,
@@ -239,8 +224,26 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             context=self.context
         ).data
 
+    def validate(self, attrs):
+        """Общая валидация для создания и обновления рецепта."""
+        if 'ingredients' in attrs and not attrs['ingredients']:
+            raise serializers.ValidationError({
+                'ingredients': 'Это поле обязательно для заполнения.'
+            })
+        if 'tags' in attrs and not attrs['tags']:
+            raise serializers.ValidationError({
+                'tags': 'Это поле обязательно для заполнения.'
+            })
+
+        return attrs
+
     def validate_ingredients(self, value):
-        """Проверяем, что ингредиенты не повторяются."""
+        """Проверяем, что ингредиенты не повторяются и не пусты."""
+        if not value:
+            raise serializers.ValidationError(
+                'Список ингредиентов не может быть пустым.'
+            )
+
         ingredients_ids = [item['id'].id for item in value]
         if len(ingredients_ids) != len(set(ingredients_ids)):
             raise serializers.ValidationError(
@@ -249,10 +252,38 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_tags(self, value):
-        """Проверяем, что теги не повторяются."""
+        """Проверяем, что теги не повторяются и не пусты."""
+        if not value:
+            raise serializers.ValidationError(
+                'Список тегов не может быть пустым.'
+            )
         if len(value) != len(set(value)):
             raise serializers.ValidationError(
                 'Теги не должны повторяться.'
+            )
+        return value
+
+    def validate_cooking_time(self, value):
+        """Проверяем время приготовления."""
+        if value <= 0:
+            raise serializers.ValidationError(
+                'Время приготовления должно быть положительным числом.'
+            )
+        return value
+
+    def validate_name(self, value):
+        """Проверяем название рецепта."""
+        if not value.strip():
+            raise serializers.ValidationError(
+                'Название рецепта не может быть пустым.'
+            )
+        return value
+
+    def validate_text(self, value):
+        """Проверяем описание рецепта."""
+        if not value.strip():
+            raise serializers.ValidationError(
+                'Описание рецепта не может быть пустым.'
             )
         return value
 

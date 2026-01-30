@@ -1,9 +1,11 @@
-
+import hashlib
+import base64
 from djoser.views import UserViewSet
 
 from django.shortcuts import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
@@ -63,6 +65,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
     permission_classes = [AdminAuthorOrReadOnly]
     filterset_class = RecipesFilterSet
+    filter_backends = [DjangoFilterBackend]
 
     def get_serializer_class(self):
         """Определяем сериализатор в зависимости от действия"""
