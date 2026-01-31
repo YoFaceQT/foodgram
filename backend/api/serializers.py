@@ -43,13 +43,14 @@ class IngredientInRecipesSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Favorite."""
+
     class Meta:
         model = Favorite
         fields = ["user", "recipe"]
 
     def to_representation(self, instance):
         return {
-            "id": instance.id,
+            "id": instance.recipe.id,
             "name": instance.recipe.name,
             "image": instance.recipe.image.url,
             "cooking_time": instance.recipe.cooking_time,
@@ -58,14 +59,24 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 class CartSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Cart."""
+
     id = serializers.ReadOnlyField(source="recipe.id")
-    image = serializers.ReadOnlyField(source="recipe.image.url")
+    image = serializers.SerializerMethodField()
     name = serializers.ReadOnlyField(source="recipe.name")
     cooking_time = serializers.ReadOnlyField(source="recipe.cooking_time")
 
     class Meta:
         model = Cart
         fields = ["id", "image", "name", "cooking_time"]
+
+    def get_image(self, obj):
+        """Безопасное получение URL изображения."""
+        request = self.context.get('request') if self.context else None
+        if obj.recipe.image:
+            if request:
+                return request.build_absolute_uri(obj.recipe.image.url)
+            return obj.recipe.image.url
+        return None
 
 
 class FollowSerializer(serializers.ModelSerializer):
