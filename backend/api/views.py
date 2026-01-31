@@ -1,4 +1,3 @@
-import hashlib
 import base64
 import datetime
 from djoser.views import UserViewSet
@@ -10,26 +9,19 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 
 from api.serializers import (
     TagsSerializer,
     IngredientsSerializer,
-    IngredientInRecipesSerializer,
-    FavoriteSerializer,
-    CartSerializer,
     FollowSerializer,
     FollowDisplaySerializer,
     RecipeFavoriteSerializer,
     AvatarSerializer,
     RecipeCreateUpdateSerializer,
     RecipeDetailSerializer,
-    RecipeIngredientCreateSerializer,
     CustomUserSerializer,
 )
 
