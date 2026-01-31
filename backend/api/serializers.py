@@ -82,6 +82,13 @@ class FollowSerializer(serializers.ModelSerializer):
             )
         ]
 
+    def validate(self, data):
+        if data['user'] == data['author']:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя'
+            )
+        return data
+
 
 class RecipeFavoriteSerializer(serializers.ModelSerializer):
     """ Сериализатор для Favorite и Cart. """

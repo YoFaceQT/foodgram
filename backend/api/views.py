@@ -130,6 +130,11 @@ class CustomUserViewSet(UserViewSet):
     )
     def subscribe(self, request, id):
         """ Метод создает/удаляет связь между пользователями. """
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Учетные данные не были предоставлены."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         if request.method == 'POST':
             serializer = create_object(
                 request,
@@ -152,7 +157,7 @@ class CustomUserViewSet(UserViewSet):
     def subscriptions(self, request):
         """ Список подписок у пользователя. """
         user = request.user
-        authors = User.objects.filter(subscribing__user=user)
+        authors = User.objects.filter(following__user=user)
 
         paged_queryset = self.paginate_queryset(authors)
         serializer = FollowDisplaySerializer(
