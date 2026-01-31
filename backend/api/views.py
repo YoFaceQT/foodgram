@@ -87,6 +87,21 @@ class RecipesViewSet(viewsets.ModelViewSet):
         """Создание рецепта с привязкой к автору"""
         serializer.save(author=self.request.user)
 
+    def partial_update(self, request, *args, **kwargs):
+        """Редактироватирование рецепта."""
+        recipe_id = self.kwargs['pk']
+        recipe = get_object_or_404(Recipes, pk=recipe_id)
+        self.check_object_permissions(request, recipe)
+        serialazer = self.get_serializer(
+            instance=recipe,
+            data=request.data)
+        serialazer.is_valid(raise_exception=True)
+        result = serialazer.save()
+        return Response(
+            RecipeDetailSerializer(result, context={'request': request}).data,
+            status=status.HTTP_200_OK
+        )
+
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
