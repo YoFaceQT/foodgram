@@ -24,3 +24,8 @@ urlpatterns = [
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ]
+
+# function_urls = [
+#     path('recipes/download_shopping_cart/', download_shopping_cart,
+#          name='download_shopping_cart'),
+# ]
