@@ -167,15 +167,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
-            # Ошибка: ищете в Favorite, а нужно в Cart
             cart_item = Cart.objects.filter(author=user, recipe=recipe).first()
-            
             if not cart_item:
                 return Response(
                     {'detail': 'Рецепт не найден в корзине'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
             cart_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -260,6 +257,28 @@ class RecipesViewSet(viewsets.ModelViewSet):
         response['Cache-Control'] = 'no-cache'
 
         return response
+
+    @action(
+        detail=True,
+        methods=['GET'],
+        permission_classes=[AllowAny],
+        url_path='get-link',
+        url_name='get-link'
+    )
+    def get_short_link(self, request, pk=None):
+        """Получение короткой ссылки на рецепт"""
+        recipe = get_object_or_404(Recipes, pk=pk)
+
+        recipe_id_bytes = str(recipe.id).encode('utf-8')
+        short_hash = base64.urlsafe_b64encode(recipe_id_bytes).decode('utf-8')[:8]
+
+        domain = request.build_absolute_uri('/')[:-1]
+
+        short_link = f"{domain}/s/{short_hash}"
+
+        return Response({
+            "short-link": short_link
+        }, status=status.HTTP_200_OK)
 
 
 class CustomUserViewSet(UserViewSet):
