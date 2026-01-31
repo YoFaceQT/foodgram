@@ -114,28 +114,6 @@ class RecipeFavoriteSerializer(serializers.ModelSerializer):
         )
 
 
-class FollowDisplaySerializer(UserSerializer):
-    """Сериализатор для отображения информации о пользователях,
-    на которых оформлена подписка."""
-    recipes = RecipeFavoriteSerializer(
-        many=True,
-        read_only=True,
-        help_text="Список рецептов автора"
-    )
-    recipes_count = serializers.SerializerMethodField()
-    help_text = "Общее количество рецептов автора"
-
-    class Meta:
-        model = User
-        fields = UserSerializer.Meta.fields + (
-            'recipes',
-            'recipes_count',
-        )
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
-
-
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith("data:image"):
@@ -381,8 +359,36 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
         if user and user.is_authenticated:
-            try:
-                return Cart.objects.filter(user=user, recipe=obj).exists()
-            except Exception:
-                return Cart.objects.filter(author=user, recipe=obj).exists()
+            return Cart.objects.filter(author=user, recipe=obj).exists()
         return False
+
+
+class FollowDisplaySerializer(CustomUserSerializer):
+    """Сериализатор для отображения информации о пользователях,
+    на которых оформлена подписка."""
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def get_recipes(self, obj):
+        """Получаем рецепты автора с поддержкой лимита."""
+        request = self.context.get('request')
+        limit = request.query_params.get('recipes_limit') if request else None
+
+        recipes = obj.recipe_author.all()
+
+        if limit:
+            try:
+                limit = int(limit)
+                recipes = recipes[:limit]
+            except ValueError:
+                pass
+
+        return RecipeFavoriteSerializer(recipes, many=True, context=self.context).data
+
+    def get_recipes_count(self, obj):
+        """Получаем общее количество рецептов автора."""
+        return obj.recipe_author.count()

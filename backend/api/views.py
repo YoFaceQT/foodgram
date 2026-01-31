@@ -115,27 +115,30 @@ class RecipesViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            # Проверяем существование записи - используем поле 'user', а не 'author'!
             if Favorite.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
                     {'errors': 'Рецепт уже в избранном'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
-            # Создаем запись
+
             favorite = Favorite.objects.create(user=user, recipe=recipe)
-            
-            # Используем RecipeFavoriteSerializer для ответа
+
             serializer = RecipeFavoriteSerializer(
                 recipe,
                 context={'request': request}
             )
-            
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         elif request.method == 'DELETE':
-            # Удаляем запись - используем поле 'user', а не 'author'!
-            favorite = get_object_or_404(Favorite, user=user, recipe=recipe)
+            favorite = Favorite.objects.filter(user=user, recipe=recipe).first()
+
+            if not favorite:
+                return Response(
+                    {'detail': 'Рецепт не найден в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             favorite.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -150,38 +153,29 @@ class RecipesViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            # Проверяем существование записи - в Cart поле 'user' или 'author'?
-            # Сначала попробуем 'user', если не сработает - 'author'
-            try:
-                if Cart.objects.filter(user=user, recipe=recipe).exists():
-                    return Response(
-                        {'errors': 'Рецепт уже в корзине'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                cart_item = Cart.objects.create(user=user, recipe=recipe)
-            except Exception:
-                # Если поле называется 'author'
-                if Cart.objects.filter(author=user, recipe=recipe).exists():
-                    return Response(
-                        {'errors': 'Рецепт уже в корзине'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                cart_item = Cart.objects.create(author=user, recipe=recipe)
-            
-            # Используем RecipeFavoriteSerializer для ответа
+            if Cart.objects.filter(author=user, recipe=recipe).exists():
+                return Response(
+                    {'errors': 'Рецепт уже в корзине'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            Cart.objects.create(author=user, recipe=recipe)
+
             serializer = RecipeFavoriteSerializer(
                 recipe,
                 context={'request': request}
             )
-            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         elif request.method == 'DELETE':
-            # Удаляем запись
-            try:
-                cart_item = get_object_or_404(Cart, user=user, recipe=recipe)
-            except Exception:
-                cart_item = get_object_or_404(Cart, author=user, recipe=recipe)
+            # Ошибка: ищете в Favorite, а нужно в Cart
+            cart_item = Cart.objects.filter(author=user, recipe=recipe).first()
+            
+            if not cart_item:
+                return Response(
+                    {'detail': 'Рецепт не найден в корзине'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             cart_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -195,22 +189,20 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате TXT"""
         user = request.user
-        
-        # Исправляем запрос для Cart - пробуем оба варианта
+
         try:
             cart_recipes = Cart.objects.filter(user=user).select_related('recipe')
             if not cart_recipes.exists():
                 cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
         except Exception:
             cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
-            
+
         if not cart_recipes.exists():
             return Response(
                 {'detail': 'Корзина покупок пуста'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Исправляем запрос для ингредиентов
         try:
             ingredients_list = IngredientInRecipes.objects.filter(
                 recipe__cart__user=user
@@ -288,7 +280,7 @@ class CustomUserViewSet(UserViewSet):
                 {"detail": "Учетные данные не были предоставлены."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         if request.method == 'POST':
             serializer = create_object(
                 request,
@@ -301,7 +293,7 @@ class CustomUserViewSet(UserViewSet):
                 serializer.data,
                 status=status.HTTP_201_CREATED
             )
-        
+
         elif request.method == 'DELETE':
             return delete_object(request, id, User, Follow)
 
@@ -322,7 +314,6 @@ class CustomUserViewSet(UserViewSet):
             many=True
         )
         return self.get_paginated_response(serializer.data)
-
 
     @action(
         detail=False,

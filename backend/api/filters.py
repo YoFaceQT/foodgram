@@ -17,7 +17,7 @@ class RecipesFilterSet(FilterSet):
     """Фильтрация по избранному, автору, списку покупок и тегам."""
     is_favorited = django_filters.NumberFilter(method='filter_is_favorited')
     author = django_filters.ModelChoiceFilter(queryset=User.objects.all())
-    shopping_cart = django_filters.NumberFilter(method='filter_shopping_cart')
+    is_in_shopping_cart = django_filters.NumberFilter(method='filter_is_in_shopping_cart')
     tags = django_filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',
@@ -26,16 +26,18 @@ class RecipesFilterSet(FilterSet):
 
     class Meta:
         model = Recipes
-        fields = ('tags', 'author', 'is_favorited', 'shopping_cart')
+        fields = ('tags', 'author', 'is_favorited', 'is_in_shopping_cart')
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрация по избранным рецептам."""
         user = self.request.user
         if value and user.is_authenticated:
-            return queryset.filter(favorite__user=user)
+            return queryset.filter(in_favorites__user=user)
         return queryset
 
-    def filter_shopping_cart(self, queryset, name, value):
-        if value:
-            return queryset.filter(shopping_cart__author=self.request.user)
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        """Фильтрация по рецептам в корзине покупок."""
+        user = self.request.user
+        if value and user.is_authenticated:
+            return queryset.filter(cart__author=user)
         return queryset
