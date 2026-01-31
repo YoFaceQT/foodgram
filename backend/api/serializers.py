@@ -46,7 +46,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Favorite
-        fields = ["author", "recipe"]
+        fields = ["user", "recipe"]
 
     def to_representation(self, instance):
         return {
@@ -375,11 +375,14 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
         if user and user.is_authenticated:
-            return Favorite.objects.filter(user=user, recipe=obj).exists()
+            return Favorite.objects.filter(user=user, recipe=obj).exists() 
         return False
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
         if user and user.is_authenticated:
-            return Cart.objects.filter(author=user, recipe=obj).exists()
+            try:
+                return Cart.objects.filter(user=user, recipe=obj).exists()
+            except Exception:
+                return Cart.objects.filter(author=user, recipe=obj).exists()
         return False

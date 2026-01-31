@@ -115,12 +115,15 @@ class RecipesViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            # Проверяем существование записи
-            if Favorite.objects.filter(author=user, recipe=recipe).exists():
-                raise ValidationError({'detail': 'Рецепт уже в избранном'})
+            # Проверяем существование записи - используем поле 'user', а не 'author'!
+            if Favorite.objects.filter(user=user, recipe=recipe).exists():
+                return Response(
+                    {'errors': 'Рецепт уже в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
             # Создаем запись
-            favorite = Favorite.objects.create(author=user, recipe=recipe)
+            favorite = Favorite.objects.create(user=user, recipe=recipe)
             
             # Используем RecipeFavoriteSerializer для ответа
             serializer = RecipeFavoriteSerializer(
@@ -131,8 +134,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         elif request.method == 'DELETE':
-            # Удаляем запись
-            favorite = get_object_or_404(Favorite, author=user, recipe=recipe)
+            # Удаляем запись - используем поле 'user', а не 'author'!
+            favorite = get_object_or_404(Favorite, user=user, recipe=recipe)
             favorite.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -147,9 +150,40 @@ class RecipesViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            return create_object(Cart, user, recipe, CartSerializer)
+            # Проверяем существование записи - в Cart поле 'user' или 'author'?
+            # Сначала попробуем 'user', если не сработает - 'author'
+            try:
+                if Cart.objects.filter(user=user, recipe=recipe).exists():
+                    return Response(
+                        {'errors': 'Рецепт уже в корзине'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                cart_item = Cart.objects.create(user=user, recipe=recipe)
+            except Exception:
+                # Если поле называется 'author'
+                if Cart.objects.filter(author=user, recipe=recipe).exists():
+                    return Response(
+                        {'errors': 'Рецепт уже в корзине'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                cart_item = Cart.objects.create(author=user, recipe=recipe)
+            
+            # Используем RecipeFavoriteSerializer для ответа
+            serializer = RecipeFavoriteSerializer(
+                recipe,
+                context={'request': request}
+            )
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
         elif request.method == 'DELETE':
-            return delete_object(Cart, user, recipe)
+            # Удаляем запись
+            try:
+                cart_item = get_object_or_404(Cart, user=user, recipe=recipe)
+            except Exception:
+                cart_item = get_object_or_404(Cart, author=user, recipe=recipe)
+            cart_item.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
@@ -161,22 +195,42 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате TXT"""
         user = request.user
-        cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
+        
+        # Исправляем запрос для Cart - пробуем оба варианта
+        try:
+            cart_recipes = Cart.objects.filter(user=user).select_related('recipe')
+            if not cart_recipes.exists():
+                cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
+        except Exception:
+            cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
+            
         if not cart_recipes.exists():
             return Response(
                 {'detail': 'Корзина покупок пуста'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        ingredients_list = IngredientInRecipes.objects.filter(
-            recipe__cart__author=user
-        ).select_related('ingredient').values(
-            'ingredient__id',
-            'ingredient__name',
-            'ingredient__measurement_unit'
-        ).annotate(
-            total_amount=Sum('amount')
-        ).order_by('ingredient__name')
+        # Исправляем запрос для ингредиентов
+        try:
+            ingredients_list = IngredientInRecipes.objects.filter(
+                recipe__cart__user=user
+            ).select_related('ingredient').values(
+                'ingredient__id',
+                'ingredient__name',
+                'ingredient__measurement_unit'
+            ).annotate(
+                total_amount=Sum('amount')
+            ).order_by('ingredient__name')
+        except Exception:
+            ingredients_list = IngredientInRecipes.objects.filter(
+                recipe__cart__author=user
+            ).select_related('ingredient').values(
+                'ingredient__id',
+                'ingredient__name',
+                'ingredient__measurement_unit'
+            ).annotate(
+                total_amount=Sum('amount')
+            ).order_by('ingredient__name')
 
         txt_content = "СПИСОК ПОКУПОК\n"
         txt_content += "=" * 50 + "\n"
@@ -225,6 +279,7 @@ class CustomUserViewSet(UserViewSet):
     @action(
         detail=True,
         methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, id):
         """ Метод создает/удаляет связь между пользователями. """
@@ -233,6 +288,7 @@ class CustomUserViewSet(UserViewSet):
                 {"detail": "Учетные данные не были предоставлены."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+        
         if request.method == 'POST':
             serializer = create_object(
                 request,
@@ -245,12 +301,14 @@ class CustomUserViewSet(UserViewSet):
                 serializer.data,
                 status=status.HTTP_201_CREATED
             )
-        delete_object(request, id, User, Follow)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        elif request.method == 'DELETE':
+            return delete_object(request, id, User, Follow)
 
     @action(
         detail=False,
         methods=['get'],
+        permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
         """ Список подписок у пользователя. """
@@ -264,6 +322,7 @@ class CustomUserViewSet(UserViewSet):
             many=True
         )
         return self.get_paginated_response(serializer.data)
+
 
     @action(
         detail=False,
