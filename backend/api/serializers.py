@@ -2,11 +2,18 @@ import base64
 
 from djoser.serializers import UserSerializer
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from recipes.models import Tags, Recipes, Ingredients, IngredientInRecipes, Favorite, Cart, Follow
+from recipes.models import (
+    Cart,
+    Favorite,
+    Follow,
+    IngredientInRecipes,
+    Ingredients,
+    Recipes,
+    Tags,
+)
 from users.models import User
 
 
@@ -110,7 +117,13 @@ class AvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('avatar',)
-        read_only_fields = ('id', 'email', 'username', 'first_name', 'last_name')
+        read_only_fields = (
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name'
+        )
 
     def update(self, instance, validated_data):
         instance.avatar = validated_data.get('avatar', instance.avatar)
@@ -192,7 +205,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        """При возврате данных используем детальный сериализатор."""
+        """При возврате данных используем RecipeDetailSerializer."""
         return RecipeDetailSerializer(
             instance,
             context=self.context
@@ -331,7 +344,7 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
         if user and user.is_authenticated:
-            return Favorite.objects.filter(user=user, recipe=obj).exists() 
+            return Favorite.objects.filter(user=user, recipe=obj).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
@@ -349,7 +362,10 @@ class FollowDisplaySerializer(CustomUserSerializer):
 
     class Meta:
         model = User
-        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+        fields = CustomUserSerializer.Meta.fields + (
+            'recipes',
+            'recipes_count'
+        )
 
     def get_recipes(self, obj):
         """Получаем рецепты автора с поддержкой лимита."""
@@ -365,7 +381,11 @@ class FollowDisplaySerializer(CustomUserSerializer):
             except ValueError:
                 pass
 
-        return RecipeFavoriteSerializer(recipes, many=True, context=self.context).data
+        return RecipeFavoriteSerializer(
+            recipes,
+            many=True,
+            context=self.context
+        ).data
 
     def get_recipes_count(self, obj):
         """Получаем общее количество рецептов автора."""

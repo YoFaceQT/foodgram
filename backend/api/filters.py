@@ -1,7 +1,5 @@
-from django.db.models import Q
 from django_filters.rest_framework import FilterSet
 from django_filters import rest_framework as django_filters
-from django_filters import AllValuesMultipleFilter
 from rest_framework.filters import SearchFilter
 
 
@@ -17,7 +15,9 @@ class RecipesFilterSet(FilterSet):
     """Фильтрация по избранному, автору, списку покупок и тегам."""
     is_favorited = django_filters.NumberFilter(method='filter_is_favorited')
     author = django_filters.ModelChoiceFilter(queryset=User.objects.all())
-    is_in_shopping_cart = django_filters.NumberFilter(method='filter_is_in_shopping_cart')
+    is_in_shopping_cart = django_filters.NumberFilter(
+        method='filter_is_in_shopping_cart'
+    )
     tags = django_filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',

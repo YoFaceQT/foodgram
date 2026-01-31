@@ -1,19 +1,27 @@
-import hashlib
-import base64
-from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db import models
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.db import models
 
 
 User = get_user_model()
+
+MAX_NAME_OR_SLUG_LENGHT = 32
 
 
 class Tags(models.Model):
     """Модель Тегов"""
 
-    name = models.CharField('Название тега', max_length=32, unique=True) # хардкод числа
-    slug = models.SlugField('Ссылка', max_length=32, unique=True) # валидатор слага
+    name = models.CharField(
+        'Название тега',
+        max_length=MAX_NAME_OR_SLUG_LENGHT,
+        unique=True
+    )
+    slug = models.SlugField(
+        'Ссылка',
+        max_length=MAX_NAME_OR_SLUG_LENGHT,
+        unique=True
+    )
 
     class Meta:
         ordering = ('id',)
@@ -27,8 +35,15 @@ class Tags(models.Model):
 class Ingredients(models.Model):
     """Модель Ингредиентотв"""
 
-    name = models.CharField('Название ингредиента', max_length=128, unique=True) # хардкод числа
-    measurement_unit = models.CharField('Eдиница измерения', max_length=64) # хардкод числа
+    name = models.CharField(
+        'Название ингредиента',
+        max_length=128,
+        unique=True
+    )
+    measurement_unit = models.CharField(
+        'Eдиница измерения',
+        max_length=64
+    )
 
     class Meta:
         ordering = ('id',)

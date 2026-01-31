@@ -178,40 +178,22 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате TXT"""
         user = request.user
-
-        try:
-            cart_recipes = Cart.objects.filter(user=user).select_related('recipe')
-            if not cart_recipes.exists():
-                cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
-        except Exception:
-            cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
-
+        cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
         if not cart_recipes.exists():
             return Response(
                 {'detail': 'Корзина покупок пуста'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        try:
-            ingredients_list = IngredientInRecipes.objects.filter(
-                recipe__cart__user=user
-            ).select_related('ingredient').values(
-                'ingredient__id',
-                'ingredient__name',
-                'ingredient__measurement_unit'
-            ).annotate(
-                total_amount=Sum('amount')
-            ).order_by('ingredient__name')
-        except Exception:
-            ingredients_list = IngredientInRecipes.objects.filter(
-                recipe__cart__author=user
-            ).select_related('ingredient').values(
-                'ingredient__id',
-                'ingredient__name',
-                'ingredient__measurement_unit'
-            ).annotate(
-                total_amount=Sum('amount')
-            ).order_by('ingredient__name')
+        ingredients_list = IngredientInRecipes.objects.filter(
+            recipe__cart__author=user
+        ).select_related('ingredient').values(
+            'ingredient__id',
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(
+            total_amount=Sum('amount')
+        ).order_by('ingredient__name')
 
         txt_content = "СПИСОК ПОКУПОК\n"
         txt_content += "=" * 50 + "\n"
@@ -380,5 +362,3 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         return super().me(request)
-
-

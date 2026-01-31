@@ -8,13 +8,20 @@ from recipes.models import Follow
 from users.models import User
 
 
-def create_object(request, id, serializer_class, response_serializer_class, model_class):
+def create_object(
+        request, id,
+        serializer_class,
+        response_serializer_class,
+        model_class
+):
     """Создание объекта (для подписок)."""
     user = request.user
     author = get_object_or_404(User, id=id)
 
     if Follow.objects.filter(user=user, author=author).exists():
-        raise ValidationError({'detail': 'Вы уже подписаны на этого пользователя.'})
+        raise ValidationError(
+            {'detail': 'Вы уже подписаны на этого пользователя.'}
+        )
 
     data = {'user': user.id, 'author': author.id}
     serializer = serializer_class(data=data, context={'request': request})
