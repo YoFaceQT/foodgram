@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 
 
 def username_validator(value):
+    """Валидатор имени пользователя."""
+
     if len(value) > 150:
         raise ValidationError(
             _('Имя пользователя не должно превышать 150 символов.'),

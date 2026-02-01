@@ -1,7 +1,8 @@
 import base64
 
-from djoser.serializers import UserSerializer
+
 from django.core.files.base import ContentFile
+from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -179,7 +180,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 ingredient=ingredient_data['id'],
                 amount=ingredient_data['amount']
             )
-
         return recipe
 
     def update(self, instance, validated_data):

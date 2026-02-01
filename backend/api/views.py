@@ -1,17 +1,14 @@
 import base64
 import datetime
-from djoser.views import UserViewSet
-from django.db.models import Sum
-from django.shortcuts import HttpResponse
-from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
 
+from django.db.models import Sum
+from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404, HttpResponse
+from djoser.views import UserViewSet
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
 
 from api.serializers import (
     TagsSerializer,
@@ -24,15 +21,20 @@ from api.serializers import (
     RecipeDetailSerializer,
     CustomUserSerializer,
 )
-
-from api.utilits import create_object, delete_object
 from api.filters import RecipesFilterSet, IngredientSearchFilter
-from recipes.models import Cart, Favorite, Follow, Ingredients, Recipes, Tags, IngredientInRecipes
 from api.pagination import CustomPageNumberPagination
-from users.models import User
-
-
 from api.permissions import AdminAuthorOrReadOnly
+from api.utilits import create_object, delete_object
+from recipes.models import (
+    Cart,
+    Favorite,
+    Follow,
+    IngredientInRecipes,
+    Ingredients,
+    Recipes,
+    Tags
+)
+from users.models import User
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -178,56 +180,68 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате TXT"""
         user = request.user
-        cart_recipes = Cart.objects.filter(author=user).select_related('recipe')
+        cart_recipes = (Cart.objects
+                        .filter(author=user)
+                        .select_related('recipe'))
+
         if not cart_recipes.exists():
             return Response(
                 {'detail': 'Корзина покупок пуста'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        ingredients_list = IngredientInRecipes.objects.filter(
-            recipe__cart__author=user
-        ).select_related('ingredient').values(
-            'ingredient__id',
-            'ingredient__name',
-            'ingredient__measurement_unit'
-        ).annotate(
-            total_amount=Sum('amount')
-        ).order_by('ingredient__name')
+        ingredients_list = (IngredientInRecipes.objects
+                            .filter(recipe__cart__author=user)
+                            .select_related('ingredient')
+                            .values(
+                                'ingredient__id',
+                                'ingredient__name',
+                                'ingredient__measurement_unit'
+                            )
+                            .annotate(total_amount=Sum('amount'))
+                            .order_by('ingredient__name'))
 
-        txt_content = "СПИСОК ПОКУПОК\n"
-        txt_content += "=" * 50 + "\n"
-        txt_content += f"Пользователь: {user.get_full_name() or user.username}\n"
-        txt_content += f"Дата создания: {datetime.datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
-        txt_content += "=" * 50 + "\n\n"
-
-        txt_content += "ИНГРЕДИЕНТЫ:\n"
-        txt_content += "-" * 50 + "\n"
+        txt_content = (
+            "СПИСОК ПОКУПОК\n"
+            "=" * 50 + "\n"
+            f"Пользователь: {user.get_full_name() or user.username}\n"
+            f"Дата создания: {datetime.datetime.now():%d.%m.%Y %H:%M}\n"
+            "=" * 50 + "\n\n"
+            "ИНГРЕДИЕНТЫ:\n"
+            "-" * 50 + "\n"
+        )
 
         for idx, ingredient in enumerate(ingredients_list, 1):
             txt_content += (
                 f"{idx}. {ingredient['ingredient__name']} - "
-                f"{ingredient['total_amount']} {ingredient['ingredient__measurement_unit']}\n"
+                f"{ingredient['total_amount']} "
+                f"{ingredient['ingredient__measurement_unit']}\n"
             )
 
-        txt_content += "\n" + "=" * 50 + "\n"
-        txt_content += "\nРЕЦЕПТЫ В КОРЗИНЕ:\n"
-        txt_content += "-" * 50 + "\n"
+        txt_content += (
+            "\n" + "=" * 50 + "\n"
+            "\nРЕЦЕПТЫ В КОРЗИНЕ:\n"
+            "-" * 50 + "\n"
+        )
 
         for idx, cart_item in enumerate(cart_recipes, 1):
             txt_content += f"{idx}. {cart_item.recipe.name}\n"
 
-        txt_content += "\n" + "=" * 50 + "\n"
-        txt_content += f"\nВсего рецептов: {cart_recipes.count()}"
-        txt_content += f"\nВсего ингредиентов: {len(ingredients_list)}"
+        txt_content += (
+            "\n" + "=" * 50 + "\n"
+            f"\nВсего рецептов: {cart_recipes.count()}"
+            f"\nВсего ингредиентов: {len(ingredients_list)}"
+        )
 
-        filename = f"shopping_list_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        filename = f"shopping_list_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
 
         response = HttpResponse(
             txt_content,
             content_type='text/plain; charset=utf-8'
         )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = (
+            f'attachment; filename="{filename}"'
+        )
         response['Cache-Control'] = 'no-cache'
 
         return response
@@ -244,7 +258,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipes, pk=pk)
 
         recipe_id_bytes = str(recipe.id).encode('utf-8')
-        short_hash = base64.urlsafe_b64encode(recipe_id_bytes).decode('utf-8')[:8]
+        short_hash = (
+            base64.urlsafe_b64encode(recipe_id_bytes)
+            .decode('utf-8')[:8]
+        )
 
         domain = request.build_absolute_uri('/')[:-1]
 
