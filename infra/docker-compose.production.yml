@@ -9,13 +9,13 @@ services:
 
   db:
     image: postgres:13
-    env_file: ../.env
+    env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
 
   backend:
     image: yoface/foodgram_backend
-    env_file: ../.env
+    env_file: .env
     volumes:
       - static:/backend_static
       - media:/media
@@ -24,7 +24,7 @@ services:
 
   frontend:
     image: yoface/foodgram_frontend
-    env_file: ../.env
+    env_file: .env
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
@@ -32,7 +32,7 @@ services:
 
   gateway:
     image: yoface/foodgram_gateway
-    env_file: ../.env
+    env_file: .env
     ports:
       - 7000:80
     volumes:
