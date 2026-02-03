@@ -14,7 +14,7 @@ services:
       - pg_data:/var/lib/postgresql/data
 
   backend:
-    build: ../backend/
+    image: yoface/foodgram_backend
     env_file: ../.env
     volumes:
       - static:/backend_static
@@ -23,9 +23,7 @@ services:
       - db
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: yoface/foodgram_frontend
     env_file: ../.env
     volumes:
       - ../frontend/:/app/result_build/
@@ -33,10 +31,10 @@ services:
       - db
 
   gateway:
-    build: ./
+    image: yoface/foodgram_gateway
     env_file: ../.env
     ports:
-      - 80:80
+      - 7000:80
     volumes:
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
