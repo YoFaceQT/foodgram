@@ -79,8 +79,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd frontend/
-        npm uninstall react-meta-tags
-        npm install react-helmet-async
+        docker-compose up
         npm install
   
     - name: Test frontend
