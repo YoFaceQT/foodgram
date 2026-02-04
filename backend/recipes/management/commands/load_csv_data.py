@@ -13,6 +13,9 @@ from recipes.models import (
 )
 
 
+CSV_FILE_PATH = '/app/recipes/management/commands/ingredients.csv'
+
+
 class Command(BaseCommand):
     help = 'Загружает данные из CSV файла или очищает все данные'
 
@@ -22,12 +25,6 @@ class Command(BaseCommand):
             '--clear',
             action='store_true',
             help='Очистить все данные перед загрузкой'
-        )
-        parser.add_argument(
-            '--csv-file',
-            type=str,
-            default='ingredients.csv',
-            help='Путь к CSV файлу с ингредиентами'
         )
 
     def handle(self, *args, **options):
@@ -70,12 +67,12 @@ class Command(BaseCommand):
             self.style.SUCCESS('Все записи успешно удалены!')
         )
 
-    def load_ingredients(self, csv_file_path):
+    def load_ingredients(self, CSV_FILE_PATH):
         """Загружает ингредиенты из CSV файла"""
-        self.stdout.write(f'Загрузка ингредиентов из файла: {csv_file_path}')
+        self.stdout.write(f'Загрузка ингредиентов из файла: {CSV_FILE_PATH}')
 
         try:
-            with open(csv_file_path, 'r', encoding='utf-8') as file:
+            with open(CSV_FILE_PATH, 'r', encoding='utf-8') as file:
                 reader = csv.reader(file)
                 ingredients_created = 0
 
@@ -106,7 +103,7 @@ class Command(BaseCommand):
 
         except FileNotFoundError:
             self.stdout.write(
-                self.style.ERROR(f'Файл не найден: {csv_file_path}')
+                self.style.ERROR(f'Файл не найден: {CSV_FILE_PATH}')
             )
             self.stdout.write(
                 'Создайте файл или укажите правильный путь --csv-file'
