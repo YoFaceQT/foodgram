@@ -57,7 +57,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipesViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Recipes"""
-    queryset = Recipes.objects.all()
+    queryset = Recipes.objects.all().order_by('-id')
     pagination_class = CustomPageNumberPagination
     permission_classes = [AdminAuthorOrReadOnly]
     filterset_class = RecipesFilterSet
@@ -184,7 +184,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
         """Скачивание списка покупок в формате TXT"""
         user = request.user
 
-        # Получаем уникальные рецепты из корзины
         cart_items = Cart.objects.filter(author=user).select_related('recipe')
 
         if not cart_items.exists():
