@@ -100,11 +100,11 @@ class Command(BaseCommand):
                                 f'Обновлена единица измерения для: {name}'
                             )
 
-                self.stdout.write(
-                    f'Загрузка завершена. Создано новых ингредиентов: {
-                        ingredients_created
-                    }'
-                )
+                    self.stdout.write(
+                        f'Загрузка завершена. Создано новых ингредиентов: {
+                            ingredients_created
+                        }'
+)
 
         except FileNotFoundError:
             self.stdout.write(
