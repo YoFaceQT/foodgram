@@ -79,9 +79,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd frontend/
-        npm uninstall react-scripts
-        npm install react-scripts@latest
-
+        npm uninstall react-meta-tags
+        npm install react-helmet-async
+        npm install
+  
     - name: Test frontend
       run: |
         cd frontend/
