@@ -13,7 +13,7 @@ from recipes.models import (
 )
 
 
-CSV_FILE_PATH = '/app/recipes/management/commands/ingredients.csv'
+DEFAULT_CSV_PATH = '/app/recipes/management/commands/ingredients.csv'
 
 
 class Command(BaseCommand):
@@ -25,6 +25,12 @@ class Command(BaseCommand):
             '--clear',
             action='store_true',
             help='Очистить все данные перед загрузкой'
+        )
+        parser.add_argument(
+            '--csv-file',
+            type=str,
+            default=DEFAULT_CSV_PATH,
+            help=f'Путь к CSV файлу (по умолчанию: {DEFAULT_CSV_PATH})'
         )
 
     def handle(self, *args, **options):
@@ -39,7 +45,8 @@ class Command(BaseCommand):
                 )
             )
 
-        self.load_ingredients(options['csv_file'])
+        csv_file_path = options['csv_file']
+        self.load_ingredients(csv_file_path)
 
         self.stdout.write(
             self.style.SUCCESS('Все данные успешно загружены!')
@@ -67,14 +74,15 @@ class Command(BaseCommand):
             self.style.SUCCESS('Все записи успешно удалены!')
         )
 
-    def load_ingredients(self, CSV_FILE_PATH):
+    def load_ingredients(self, csv_file_path):
         """Загружает ингредиенты из CSV файла"""
-        self.stdout.write(f'Загрузка ингредиентов из файла: {CSV_FILE_PATH}')
+        self.stdout.write(f'Загрузка ингредиентов из файла: {csv_file_path}')
 
         try:
-            with open(CSV_FILE_PATH, 'r', encoding='utf-8') as file:
+            with open(csv_file_path, 'r', encoding='utf-8') as file:
                 reader = csv.reader(file)
                 ingredients_created = 0
+                ingredients_updated = 0
 
                 for row in reader:
                     name, measurement_unit = row
@@ -89,21 +97,25 @@ class Command(BaseCommand):
                     if created:
                         ingredients_created += 1
                     else:
-
                         if ingredient.measurement_unit != measurement_unit:
                             ingredient.measurement_unit = measurement_unit
                             ingredient.save()
+                            ingredients_updated += 1
                             self.stdout.write(
                                 f'Обновлена единица измерения для: {name}'
                             )
 
+                self.stdout.write(
+                    f'Создано новых ингредиентов: {ingredients_created}'
+                )
+                if ingredients_updated > 0:
                     self.stdout.write(
-                        f'Создано новых ингредиентов: {ingredients_created}'
+                        f'Обновлено ингредиентов: {ingredients_updated}'
                     )
 
         except FileNotFoundError:
             self.stdout.write(
-                self.style.ERROR(f'Файл не найден: {CSV_FILE_PATH}')
+                self.style.ERROR(f'Файл не найден: {csv_file_path}')
             )
             self.stdout.write(
                 'Создайте файл или укажите правильный путь --csv-file'
