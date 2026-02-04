@@ -183,18 +183,20 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате TXT"""
         user = request.user
-        cart_recipes = (Cart.objects
-                        .filter(author=user)
-                        .select_related('recipe'))
 
-        if not cart_recipes.exists():
+        # Получаем уникальные рецепты из корзины
+        cart_items = Cart.objects.filter(author=user).select_related('recipe')
+
+        if not cart_items.exists():
             return Response(
                 {'detail': 'Корзина покупок пуста'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        recipe_ids = cart_items.values_list('recipe_id', flat=True)
+
         ingredients_list = (IngredientInRecipes.objects
-                            .filter(recipe__cart__author=user)
+                            .filter(recipe_id__in=recipe_ids)
                             .select_related('ingredient')
                             .values(
                                 'ingredient__id',
@@ -204,42 +206,62 @@ class RecipesViewSet(viewsets.ModelViewSet):
                             .annotate(total_amount=Sum('amount'))
                             .order_by('ingredient__name'))
 
-        txt_content = (
-            "СПИСОК ПОКУПОК\n"
-            "=" * 50 + "\n"
-            f"Пользователь: {user.get_full_name() or user.username}\n"
-            f"Дата создания: {datetime.datetime.now():%d.%m.%Y %H:%M}\n"
-            "=" * 50 + "\n\n"
-            "ИНГРЕДИЕНТЫ:\n"
-            "-" * 50 + "\n"
+        txt_content = []
+
+        txt_content.append("СПИСОК ПОКУПОК")
+        txt_content.append("=" * 50)
+        txt_content.append(
+            f"Пользователь: {user.get_full_name() or user.username}"
         )
-
-        for idx, ingredient in enumerate(ingredients_list, 1):
-            txt_content += (
-                f"{idx}. {ingredient['ingredient__name']} - "
-                f"{ingredient['total_amount']} "
-                f"{ingredient['ingredient__measurement_unit']}\n"
-            )
-
-        txt_content += (
-            "\n" + "=" * 50 + "\n"
-            "\nРЕЦЕПТЫ В КОРЗИНЕ:\n"
-            "-" * 50 + "\n"
+        txt_content.append(
+            f"Дата создания: {datetime.datetime.now():%d.%m.%Y %H:%M}"
         )
+        txt_content.append("=" * 50)
+        txt_content.append("")
 
-        for idx, cart_item in enumerate(cart_recipes, 1):
-            txt_content += f"{idx}. {cart_item.recipe.name}\n"
+        txt_content.append("ИНГРЕДИЕНТЫ:")
+        txt_content.append("-" * 50)
 
-        txt_content += (
-            "\n" + "=" * 50 + "\n"
-            f"\nВсего рецептов: {cart_recipes.count()}"
-            f"\nВсего ингредиентов: {len(ingredients_list)}"
-        )
+        if ingredients_list:
+            for idx, ingredient in enumerate(ingredients_list, 1):
+                txt_content.append(
+                    f"{idx}. {ingredient['ingredient__name']} - "
+                    f"{ingredient['total_amount']} "
+                    f"{ingredient['ingredient__measurement_unit']}"
+                )
+        else:
+            txt_content.append("-")
+
+        txt_content.append("")
+        txt_content.append("=" * 50)
+        txt_content.append("")
+
+        txt_content.append("РЕЦЕПТЫ В КОРЗИНЕ:")
+        txt_content.append("-" * 50)
+
+        unique_recipes = {}
+        for cart_item in cart_items:
+            if cart_item.recipe_id not in unique_recipes:
+                unique_recipes[cart_item.recipe_id] = cart_item.recipe.name
+
+        if unique_recipes:
+            for idx, recipe_name in enumerate(unique_recipes.values(), 1):
+                txt_content.append(f"{idx}. {recipe_name}")
+        else:
+            txt_content.append("-")
+
+        txt_content.append("")
+        txt_content.append("=" * 50)
+        txt_content.append("")
+        txt_content.append(f"Всего рецептов: {len(unique_recipes)}")
+        txt_content.append(f"Всего ингредиентов: {len(ingredients_list)}")
+
+        txt_content_str = "\n".join(txt_content)
 
         filename = f"shopping_list_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
 
         response = HttpResponse(
-            txt_content,
+            txt_content_str,
             content_type='text/plain; charset=utf-8'
         )
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
