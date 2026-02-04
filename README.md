@@ -1,3 +1,5 @@
+# **_Foodgram_**
+«Фудграм» — сайт, на котором пользователи публикуют свои рецепты, добавляют чужие рецепты в избранное и подписываются на публикации других авторов. Зарегистрированным пользователям также доступен сервис «Список покупок», позволяющий создавать список продуктов для приготовления выбранных блюд.
 ![status workflow](https://github.com/krivse/Foodgram_Workflow/actions/workflows/main.yml/badge.svg)
 
 ### Используемые технологии
@@ -12,8 +14,7 @@
 ![Static Badge](https://img.shields.io/badge/NginX-gray?style=plastic&logo=nginx&labelColor=green) - NginX  
 ![Static Badge](https://img.shields.io/badge/docker-grey?style=plastic&logo=docker&logoColor=white&labelColor=blue) - Docker  
 
-# **_Foodgram_**
-«Фудграм» — сайт, на котором пользователи публикуют свои рецепты, добавляют чужие рецепты в избранное и подписываются на публикации других авторов. Зарегистрированным пользователям также доступен сервис «Список покупок», позволяющий создавать список продуктов для приготовления выбранных блюд.
+
 
 **_Ссылка на [проект](https://yofoodgram.duckdns.org/ "Гиперссылка к проекту.")_**  
 **_Ссылка на [админ-зону](https://yofoodgram.duckdns.org/admin "Гиперссылка к админке.")_**
@@ -31,9 +32,12 @@
 - Страница смены пароля  
 
 ## Как запустить проект с помощью Docker Compose
-Клонировать репозиторий и перейти в него в командной строке:
+**Клонировать репозиторий и перейти в него в командной строке:**
 ```bash
 git clone git@github.com:YoFaceQT/foodgram.git
+```
+
+
 
 > [!IMPORTANT]
 > Необходимо создать файл `.env` с переменными окружения в корневой папке проекта.</br>
@@ -43,11 +47,12 @@ git clone git@github.com:YoFaceQT/foodgram.git
 > Пример файла [.env.example](https://github.com/YoFaceQT/foodgram/blob/main/.env.example)
 
 
-```shell
-# Запустить докер композ
+
+**Запустить докер композ**
+```
 docker compose -f infra/docker-local.yml up -d --build
 ```
-**_Создать и запустить контейнеры Docker, выполнить команду на сервере (версии команд "docker compose" или "docker-compose" отличаются в зависимости от установленной версии Docker Compose):**_
+**Создать и запустить контейнеры Docker, выполнить команду на сервере (версии команд "docker compose" или "docker-compose" отличаются в зависимости от установленной версии Docker Compose):**
 ```
 sudo docker compose up -d
 ```
