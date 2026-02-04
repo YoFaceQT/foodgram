@@ -1,6 +1,5 @@
 import base64
 
-
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
@@ -13,7 +12,7 @@ from recipes.models import (
     IngredientInRecipes,
     Ingredients,
     Recipes,
-    Tags,
+    Tags
 )
 from users.models import User
 

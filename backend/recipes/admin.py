@@ -1,12 +1,13 @@
 from django.contrib import admin
 
-from .models import (
+from recipes.models import (
     Favorite,
     IngredientInRecipes,
     Ingredients,
     Recipes,
-    Tags,
+    Tags
 )
+
 
 @admin.register(Tags)
 class TagsAdmin(admin.ModelAdmin):

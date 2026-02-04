@@ -2,28 +2,28 @@ import base64
 import datetime
 
 from django.db.models import Sum
+from django.shortcuts import HttpResponse, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import get_object_or_404, HttpResponse
 from djoser.views import UserViewSet
-from rest_framework import status, permissions, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from api.serializers import (
-    TagsSerializer,
-    IngredientsSerializer,
-    FollowSerializer,
-    FollowDisplaySerializer,
-    RecipeFavoriteSerializer,
-    AvatarSerializer,
-    RecipeCreateUpdateSerializer,
-    RecipeDetailSerializer,
-    CustomUserSerializer,
-)
-from api.filters import RecipesFilterSet, IngredientSearchFilter
+from api.filters import IngredientSearchFilter, RecipesFilterSet
 from api.pagination import CustomPageNumberPagination
 from api.permissions import AdminAuthorOrReadOnly
+from api.serializers import (
+    AvatarSerializer,
+    CustomUserSerializer,
+    FollowDisplaySerializer,
+    FollowSerializer,
+    IngredientsSerializer,
+    RecipeCreateUpdateSerializer,
+    RecipeDetailSerializer,
+    RecipeFavoriteSerializer,
+    TagsSerializer
+)
 from api.utilits import create_object, delete_object
 from recipes.models import (
     Cart,
@@ -125,7 +125,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
-            favorite = Favorite.objects.filter(user=user, recipe=recipe).first()
+            favorite = Favorite.objects.filter(
+                user=user,
+                recipe=recipe
+            ).first()
 
             if not favorite:
                 return Response(
@@ -239,9 +242,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             txt_content,
             content_type='text/plain; charset=utf-8'
         )
-        response['Content-Disposition'] = (
-            f'attachment; filename="{filename}"'
-        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
         response['Cache-Control'] = 'no-cache'
 
         return response

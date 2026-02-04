@@ -51,7 +51,7 @@ def create_favorite_cart(model, user, recipe, serializer_class):
     """Создание объекта (для избранного и корзины)."""
     if model.objects.filter(user=user, recipe=recipe).exists():
         raise ValidationError({'detail': 'Рецепт уже добавлен.'})
-    obj = model.objects.create(user=user, recipe=recipe)
+    model.objects.create(user=user, recipe=recipe)
     serializer = RecipeFavoriteSerializer(
         recipe,
         context={
