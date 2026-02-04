@@ -101,10 +101,8 @@ class Command(BaseCommand):
                             )
 
                     self.stdout.write(
-                        f'Загрузка завершена. Создано новых ингредиентов: {
-                            ingredients_created
-                        }'
-)
+                        f'Создано новых ингредиентов: {ingredients_created}'
+                    )
 
         except FileNotFoundError:
             self.stdout.write(
