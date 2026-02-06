@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.filters import IngredientSearchFilter, RecipesFilterSet
-from api.pagination import CustomPageNumberPagination
+from api.pagination import FoodgramPageNumberPagination
 from api.permissions import AdminAuthorOrReadOnly
 from api.serializers import (
     AvatarSerializer,
@@ -58,7 +58,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipesViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Recipes"""
     queryset = Recipes.objects.all().order_by('-id')
-    pagination_class = CustomPageNumberPagination
+    pagination_class = FoodgramPageNumberPagination
     permission_classes = [AdminAuthorOrReadOnly]
     filterset_class = RecipesFilterSet
     filter_backends = [DjangoFilterBackend]

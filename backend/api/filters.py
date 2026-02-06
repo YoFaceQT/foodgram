@@ -6,8 +6,16 @@ from recipes.models import Recipes, Tags, User
 
 
 class IngredientSearchFilter(SearchFilter):
-    """Поиск ингредиента по названию"""
+    """Поиск ингредиента по названию с частичным совпадением"""
     search_param = 'name'
+
+    def filter_queryset(self, request, queryset, view):
+        search_term = request.query_params.get(self.search_param, '').strip()
+
+        if search_term:
+            return queryset.filter(name__istartswith=search_term)
+
+        return queryset
 
 
 class RecipesFilterSet(FilterSet):
