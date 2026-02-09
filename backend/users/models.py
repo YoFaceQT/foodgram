@@ -1,25 +1,15 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from users.validators import username_validator
-
 
 NAME_MAX_LENGHT = 150
-EMAIL_MAX_LENGHT = 254
 
 
 class User(AbstractUser):
     """Модель User"""
 
-    username = models.CharField(
-        'Пользователь',
-        max_length=NAME_MAX_LENGHT,
-        unique=True,
-        validators=[username_validator]
-    )
     email = models.EmailField(
         'Электронная почта',
-        max_length=EMAIL_MAX_LENGHT,
         unique=True,
     )
     first_name = models.CharField(

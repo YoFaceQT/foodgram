@@ -2,21 +2,21 @@ from django.contrib import admin
 
 from recipes.models import (
     Favorite,
-    IngredientInRecipes,
-    Ingredients,
-    Recipes,
-    Tags
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    Tag
 )
 
 
-@admin.register(Tags)
+@admin.register(Tag)
 class TagsAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'slug')
     list_per_page = 20
 
 
-@admin.register(Ingredients)
+@admin.register(Ingredient)
 class IngredientsAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'measurement_unit')
@@ -25,14 +25,15 @@ class IngredientsAdmin(admin.ModelAdmin):
 
 
 class IngredientInRecipesInline(admin.TabularInline):
-    model = IngredientInRecipes
+    model = IngredientInRecipe
+    min_num = 1
 
 
 class FavoriteAdmin(admin.TabularInline):
     model = Favorite
 
 
-@admin.register(Recipes)
+@admin.register(Recipe)
 class RecipesAdmin(admin.ModelAdmin):
     """Админка для рецептов"""
 

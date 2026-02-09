@@ -1,14 +1,26 @@
+import base64
+import hashlib
+import time
+
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import F, Q
 
 
 User = get_user_model()
 
 MAX_NAME_OR_SLUG_LENGHT = 32
+INGRIDIENT_MAX_LENGHT_NAME = 128
+MEASURMENT_MAX = 64
+MIN_COOKING_TIME = 1
+MAX_COOKING_TIME = 32000
+MIN_INGREDIENT_AMOUNT = 1
+MAX_INGREDIENT_AMOUNT = 32000
+SHORT_HASH_LENGTH = 8
 
 
-class Tags(models.Model):
+class Tag(models.Model):
     """Модель Тегов"""
 
     name = models.CharField(
@@ -23,7 +35,7 @@ class Tags(models.Model):
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('name',)
         verbose_name = 'тэг'
         verbose_name_plural = 'теги'
 
@@ -31,29 +43,34 @@ class Tags(models.Model):
         return self.name
 
 
-class Ingredients(models.Model):
-    """Модель Ингредиентотв"""
+class Ingredient(models.Model):
+    """Модель Ингредиентов"""
 
     name = models.CharField(
         'Название ингредиента',
-        max_length=128,
-        unique=True
+        max_length=INGRIDIENT_MAX_LENGHT_NAME,
     )
     measurement_unit = models.CharField(
         'Eдиница измерения',
-        max_length=64
+        max_length=MEASURMENT_MAX
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('name',)
         verbose_name = 'ингредиент'
         verbose_name_plural = 'ингредиенты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_measurement_unit'
+            )
+        ]
 
     def __str__(self):
         return self.name
 
 
-class Recipes(models.Model):
+class Recipe(models.Model):
     """Модель Рецептов"""
 
     name = models.CharField('Название рецепта', max_length=256, unique=True)
@@ -63,18 +80,72 @@ class Recipes(models.Model):
         related_name='recipe_author', verbose_name='Автор'
     )
     text = models.TextField('Описание рецепта')
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления (в минутах)',
-        validators=[MinValueValidator(1)]
+        validators=[
+            MinValueValidator(
+                MIN_COOKING_TIME,
+                message=(
+                    f'Время приготовления должно быть не менее '
+                    f'{MIN_COOKING_TIME} '
+                    f'{"минуты" if MIN_COOKING_TIME == 1 else "минут"}.'
+                )
+            ),
+            MaxValueValidator(
+                MAX_COOKING_TIME,
+                message=(
+                    f'Время приготовления не должно превышать'
+                    f'{MAX_COOKING_TIME} минут.'
+                )
+            )
+        ]
+    )
+    short_hash = models.CharField(
+        'Короткий хэш',
+        max_length=SHORT_HASH_LENGTH,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text='Уникальный короткий идентификатор для ссылки'
     )
     image = models.ImageField('Картинка', upload_to='recipes/images/')
     ingredients = models.ManyToManyField(
-        Ingredients, through='IngredientInRecipes', verbose_name='Ингредиенты'
+        Ingredient, through='IngredientInRecipe', verbose_name='Ингредиенты'
     )
-    tags = models.ManyToManyField(Tags, verbose_name='Теги')
+    tags = models.ManyToManyField(Tag, verbose_name='Теги')
+
+    def generate_short_hash(self):
+        """Генерирует короткий хэш для рецепта."""
+        data = f"{self.id}_{time.time()}".encode('utf-8')
+        hash_obj = hashlib.md5(data).digest()
+        short_hash = base64.urlsafe_b64encode(hash_obj).decode('utf-8')
+        return short_hash[:SHORT_HASH_LENGTH]
+
+    def save(self, *args, **kwargs):
+        """Переопределяем метод save для генерации short_hash при создании."""
+        if not self.short_hash:
+            if self.pk is None:
+                super().save(*args, **kwargs)
+                self.short_hash = self.generate_short_hash()
+                super().save(update_fields=['short_hash'])
+            else:
+                self.short_hash = self.generate_short_hash()
+                super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
+
+    def get_short_url(self, request=None):
+        """Возвращает короткую ссылку на рецепт."""
+        if not self.short_hash:
+            return None
+        if request:
+            domain = request.build_absolute_uri('/')[:-1]
+        else:
+            domain = ''
+        return f"{domain}/s/{self.short_hash}"
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('name',)
         verbose_name = 'рецепт'
         verbose_name_plural = 'рецепты'
 
@@ -82,18 +153,33 @@ class Recipes(models.Model):
         return self.name
 
 
-class IngredientInRecipes(models.Model):
+class IngredientInRecipe(models.Model):
     """Модель для связи ингредиентов в рецепте"""
 
     ingredient = models.ForeignKey(
-        Ingredients, on_delete=models.CASCADE, verbose_name='Ингредиент'
+        Ingredient, on_delete=models.CASCADE, verbose_name='Ингредиент'
     )
     recipe = models.ForeignKey(
-        Recipes, on_delete=models.CASCADE, verbose_name='Рецепт'
+        Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
     )
     amount = models.PositiveSmallIntegerField(
         'Количество',
-        validators=[MinValueValidator(1)]
+        validators=[
+            MinValueValidator(
+                MIN_INGREDIENT_AMOUNT,
+                message=(
+                    f'Количество ингредиента должно быть не менее '
+                    f'{MIN_INGREDIENT_AMOUNT}.'
+                )
+            ),
+            MaxValueValidator(
+                MAX_INGREDIENT_AMOUNT,
+                message=(
+                    f'Количество ингредиента не должно превышать '
+                    f'{MAX_INGREDIENT_AMOUNT}.'
+                )
+            )
+        ]
     )
 
     class Meta:
@@ -115,7 +201,7 @@ class Cart(models.Model):
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
-        Recipes,
+        Recipe,
         related_name='cart',
         verbose_name='Рецепт для приготовления',
         on_delete=models.CASCADE
@@ -139,7 +225,7 @@ class Favorite(models.Model):
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
-        Recipes,
+        Recipe,
         on_delete=models.CASCADE,
         related_name='in_favorites',
         verbose_name='Рецепт'
@@ -171,6 +257,18 @@ class Follow(models.Model):
 
     class Meta:
         verbose_name = 'Отслеживаемое'
+        verbose_name_plural = 'Отслеживаемые'
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_follow'
+            ),
+            models.CheckConstraint(
+                check=~Q(user=F('author')),
+                name='prevent_self_follow'
+            )
+        ]
 
     def __str__(self):
         return f'Пользователь {self.user} отслеживает автора {self.author}'
