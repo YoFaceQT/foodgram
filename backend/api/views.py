@@ -383,5 +383,5 @@ class CustomUserViewSet(UserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        """Получение данных текущего пользователя."""
+        """Получение данных текущего пользователя"""
         return super().me(request)
