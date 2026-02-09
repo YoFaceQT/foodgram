@@ -276,6 +276,7 @@
 import base64
 import hashlib
 import random
+import string
 import time
 import uuid
 
@@ -377,13 +378,13 @@ class Recipe(models.Model):
             )
         ]
     )
-    short_hash = models.CharField(
-        'Короткий хэш',
+    short_code = models.CharField(
+        'Короткий код',
         max_length=SHORT_HASH_LENGTH,
         unique=True,
         blank=True,
         null=True,
-        help_text='Уникальный короткий идентификатор для ссылки'
+        help_text='Уникальный короткий код для ссылки'
     )
     image = models.ImageField('Картинка', upload_to='recipes/images/')
     ingredients = models.ManyToManyField(
@@ -391,34 +392,40 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(Tag, verbose_name='Теги')
 
-    def generate_short_hash(self):
-        """Генерирует короткий хэш для рецепта."""
-        if self.id:
-            data = f"{self.id}_{time.time()}".encode('utf-8')
-        else:
-            temp_id = f"{time.time()}_{random.random()}_{uuid.uuid4()}"
-            data = temp_id.encode('utf-8')
+    def generate_short_code(self):
+        """Генерирует короткий код для рецепта."""
+        characters = string.ascii_letters + string.digits
+        code_length = SHORT_HASH_LENGTH
 
-        hash_obj = hashlib.md5(data).digest()
-        short_hash = base64.urlsafe_b64encode(hash_obj).decode('utf-8')
-        return short_hash[:SHORT_HASH_LENGTH]
+        while True:
+            code = ''.join(
+                random.choice(characters) for _ in range(code_length)
+            )
+
+            if not Recipe.objects.filter(short_code=code).exists():
+                return code
 
     def save(self, *args, **kwargs):
-        """Переопределяем метод save для генерации short_hash при создании."""
-        if not self.short_hash:
-            self.short_hash = self.generate_short_hash()
+        """Переопределяем метод save для генерации short_code при создании."""
+        is_new = self.pk is None
+
+        if is_new:
+            if not self.short_code:
+                self.short_code = self.generate_short_code()
 
         super().save(*args, **kwargs)
 
     def get_short_url(self, request=None):
         """Возвращает короткую ссылку на рецепт."""
-        if not self.short_hash:
+        if not self.short_code:
             return None
+
         if request:
-            domain = request.build_absolute_uri('/')[:-1]
+            base_url = request.build_absolute_uri('/')
+            base_url = base_url.rstrip('/')
+            return f"{base_url}/s/{self.short_code}"
         else:
-            domain = ''
-        return f"{domain}/s/{self.short_hash}"
+            return f"/s/{self.short_code}"
 
     class Meta:
         ordering = ('name',)

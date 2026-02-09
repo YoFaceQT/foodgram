@@ -21,9 +21,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-    path(
-        's/<str:short_hash>/',
-        ShortLinkRedirectView.as_view(),
-        name='short_link_redirect'
-    ),
+    path('s/<str:short_code>/',
+         ShortLinkRedirectView.as_view(),
+         name='short_link_redirect'),
 ]

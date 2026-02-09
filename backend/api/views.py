@@ -246,25 +246,25 @@ class RecipesViewSet(viewsets.ModelViewSet):
         """Получение короткой ссылки на рецепт."""
         recipe = get_object_or_404(Recipe, pk=pk)
 
-        if not recipe.short_hash:
-            recipe.short_hash = recipe.generate_short_hash()
-            recipe.save(update_fields=['short_hash'])
+        if not recipe.short_code:
+            recipe.short_code = recipe.generate_short_code()
+            recipe.save(update_fields=['short_code'])
 
         short_link = recipe.get_short_url(request)
-
         return Response({
-            "short-link": short_link
+            "short-link": short_link,
+            "recipe_name": recipe.name,
+            "recipe_id": recipe.id
         }, status=status.HTTP_200_OK)
 
 
 class ShortLinkRedirectView(View):
     """Редирект по короткой ссылке."""
 
-    def get(self, request, short_hash):
-        """Перенаправляет на страницу рецепта по короткому хэшу."""
-        recipe = get_object_or_404(Recipe, short_hash=short_hash)
+    def get(self, request, short_code):
+        """Перенаправляет на страницу рецепта по короткому коду."""
+        recipe = get_object_or_404(Recipe, short_code=short_code)
         recipe_url = f"/recipes/{recipe.id}/"
-
         return HttpResponseRedirect(recipe_url)
 
 
