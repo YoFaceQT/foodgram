@@ -7,7 +7,7 @@ from recipes.models import (
     Favorite,
     Follow,
     Ingredient,
-    IngredientInRecipes,
+    IngredientInRecipe,
     Recipe,
     Tag
 )
@@ -58,7 +58,7 @@ class Command(BaseCommand):
             Cart,
             Favorite,
             Follow,
-            IngredientInRecipes,
+            IngredientInRecipe,
             Recipe,
             Tag,
             Ingredient,
