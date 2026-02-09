@@ -6,10 +6,10 @@ from recipes.models import (
     Cart,
     Favorite,
     Follow,
+    Ingredient,
     IngredientInRecipes,
-    Ingredients,
-    Recipes,
-    Tags
+    Recipe,
+    Tag
 )
 
 
@@ -59,9 +59,9 @@ class Command(BaseCommand):
             Favorite,
             Follow,
             IngredientInRecipes,
-            Recipes,
-            Tags,
-            Ingredients,
+            Recipe,
+            Tag,
+            Ingredient,
         ]
 
         for model in models_to_clear:
@@ -89,7 +89,7 @@ class Command(BaseCommand):
                     name = name.strip()
                     measurement_unit = measurement_unit.strip()
 
-                    ingredient, created = Ingredients.objects.get_or_create(
+                    ingredient, created = Ingredient.objects.get_or_create(
                         name=name,
                         defaults={'measurement_unit': measurement_unit}
                     )
