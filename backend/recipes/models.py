@@ -122,7 +122,7 @@
 #         return short_hash[:SHORT_HASH_LENGTH]
 
 #     def save(self, *args, **kwargs):
-#         """Переопределяем метод save для генерации short_hash при создании."""
+#         """Переопределяем метод save дл генерации short_hash при создании."""
 #         if not self.short_hash:
 #             if self.pk is None:
 #                 super().save(*args, **kwargs)
@@ -548,4 +548,3 @@ class Follow(models.Model):
 
     def __str__(self):
         return f'Пользователь {self.user} отслеживает автора {self.author}'
-
