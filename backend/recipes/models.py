@@ -273,12 +273,8 @@
 #     def __str__(self):
 #         return f'Пользователь {self.user} отслеживает автора {self.author}'
 
-import base64
-import hashlib
 import random
 import string
-import time
-import uuid
 
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
