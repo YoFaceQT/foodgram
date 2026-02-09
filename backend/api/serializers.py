@@ -216,7 +216,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         if method == 'PATCH':
             if 'ingredients' not in attrs:
                 raise serializers.ValidationError({
-                    'ingredients':(
+                    'ingredients': (
                         'Это поле обязательно при обновлении рецепта.'
                     )
                 })
