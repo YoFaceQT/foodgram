@@ -261,7 +261,7 @@ class ShortLinkRedirectView(View):
     def get(self, request, short_code):
         """Перенаправляет на страницу рецепта по короткому коду."""
         recipe = get_object_or_404(Recipe, short_code=short_code)
-        recipe_url = reverse('api:recipe-detail', kwargs={'pk': recipe.id})
+        recipe_url = reverse('recipe-detail', kwargs={'pk': recipe.id})
         full_url = request.build_absolute_uri(recipe_url)
         return HttpResponseRedirect(full_url)
 
