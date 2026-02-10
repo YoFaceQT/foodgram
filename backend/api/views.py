@@ -17,14 +17,14 @@ from api.permissions import IsAdminAuthorOrReadOnly
 from api.serializers import (
     AvatarSerializer,
     CartSerializer,
-    CustomUserSerializer,
     FavoriteSerializer,
     FollowDisplaySerializer,
     FollowSerializer,
     IngredientsSerializer,
     RecipeCreateUpdateSerializer,
     RecipeDetailSerializer,
-    TagsSerializer
+    TagsSerializer,
+    UserSerializer
 )
 from recipes.models import (
     Cart,
@@ -100,7 +100,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             recipe=recipe
         ).delete()
 
-        if deleted_count == 0:
+        if not deleted_count:
             return Response(
                 {'detail': 'Рецепт не найден в избранном'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -138,7 +138,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             recipe=recipe
         ).delete()
 
-        if deleted_count == 0:
+        if not deleted_count:
             return Response(
                 {'detail': 'Рецепт не найден в корзине'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -246,15 +246,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         """Получение короткой ссылки на рецепт."""
         recipe = get_object_or_404(Recipe, pk=pk)
 
-        if not recipe.short_code:
-            recipe.short_code = recipe.generate_short_code()
-            recipe.save(update_fields=['short_code'])
-
         short_link = recipe.get_short_url(request)
         return Response({
-            "short-link": short_link,
-            "recipe_name": recipe.name,
-            "recipe_id": recipe.id
+            "short-link": short_link
         }, status=status.HTTP_200_OK)
 
 
@@ -271,10 +265,10 @@ class ShortLinkRedirectView(View):
         return HttpResponseRedirect(recipe_url)
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(UserViewSet):
     """ Вьюсет для модели User. """
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
+    serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
     @action(
@@ -289,17 +283,13 @@ class CustomUserViewSet(UserViewSet):
 
         serializer = FollowSerializer(
             data={'user': user.id, 'author': author.id},
-            context={'request': request}
+            context={'request': request, 'author': author}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        response_serializer = FollowDisplaySerializer(
-            author,
-            context={'request': request}
-        )
         return Response(
-            response_serializer.data,
+            serializer.data,
             status=status.HTTP_201_CREATED
         )
 
@@ -314,7 +304,7 @@ class CustomUserViewSet(UserViewSet):
             author=author
         ).delete()
 
-        if deleted_count == 0:
+        if not deleted_count:
             return Response(
                 {'detail': 'Подписка не найдена'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -342,7 +332,7 @@ class CustomUserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=['PUT', 'PATCH', 'DELETE'],
+        methods=['PUT'],
         url_path='me/avatar',
         url_name='me-avatar',
         permission_classes=[IsAuthenticated],
@@ -351,11 +341,10 @@ class CustomUserViewSet(UserViewSet):
         """Загрузка, обновление или удаление аватара текущего пользователя."""
         user = request.user
 
-        if request.method in ['PUT', 'PATCH']:
+        if request.method in ['PUT']:
             serializer = AvatarSerializer(
                 user,
-                data=request.data,
-                partial=(request.method == 'PATCH')
+                data=request.data
             )
 
             serializer.is_valid(raise_exception=True)
@@ -363,19 +352,23 @@ class CustomUserViewSet(UserViewSet):
 
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        elif request.method == 'DELETE':
-            if not user.avatar:
-                return Response(
-                    {'detail': 'Аватар не найден'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+    @avatar.mapping.delete
+    def delete_avatar(self, request):
+        """Удаление аватара текущего пользователя."""
+        user = request.user
 
-            user.avatar.delete(save=True)
-
+        if not user.avatar:
             return Response(
-                {'detail': 'Аватар успешно удален'},
-                status=status.HTTP_204_NO_CONTENT
+                {'detail': 'Аватар не найден'},
+                status=status.HTTP_404_NOT_FOUND
             )
+
+        user.avatar.delete(save=True)
+
+        return Response(
+            {'detail': 'Аватар успешно удален'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
     @action(
         detail=False,

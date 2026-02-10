@@ -68,6 +68,15 @@ class FollowSerializer(serializers.ModelSerializer):
             )
         return data
 
+    def to_representation(self, instance):
+        """Возвращаем данные автора с рецептами."""
+        author = instance.author
+        context = self.context.copy()
+        return FollowDisplaySerializer(
+            author,
+            context=context
+        ).data
+
 
 class RecipeFavoriteSerializer(serializers.ModelSerializer):
     """ Сериализатор для Favorite и Cart. """
@@ -149,7 +158,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
     def create_or_update_ingredients(self, recipe, ingredients_data):
         """Создает или обновляет связи рецепта с ингредиентами."""
-        IngredientInRecipe.objects.filter(recipe=recipe).delete()
+        recipe.ingredients.clear()
 
         ingredients_instances = [
             IngredientInRecipe(
@@ -178,16 +187,12 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        ingredients_data = validated_data.pop('ingredients', None)
-        tags_data = validated_data.pop('tags', None)
+        ingredients_data = validated_data.pop('ingredients')
+        tags_data = validated_data.pop('tags')
 
         instance = super().update(instance, validated_data)
-
-        if tags_data is not None:
-            instance.tags.set(tags_data)
-
-        if ingredients_data is not None:
-            self.create_or_update_ingredients(instance, ingredients_data)
+        instance.tags.set(tags_data)
+        self.create_or_update_ingredients(instance, ingredients_data)
 
         return instance
 
@@ -254,7 +259,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для кастомной модели User."""
     is_subscribed = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
@@ -295,7 +300,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 class RecipeDetailSerializer(serializers.ModelSerializer):
     """Сериализатор для детального отображения рецепта."""
-    author = CustomUserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     tags = TagsSerializer(many=True, read_only=True)
     ingredients = IngredientInRecipesSerializer(
         source='ingredientinrecipe_set',
@@ -344,7 +349,7 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class FollowDisplaySerializer(CustomUserSerializer):
+class FollowDisplaySerializer(UserSerializer):
     """Сериализатор для отображения информации о пользователях,
     на которых оформлена подписка."""
     recipes = serializers.SerializerMethodField()
@@ -352,7 +357,7 @@ class FollowDisplaySerializer(CustomUserSerializer):
 
     class Meta:
         model = User
-        fields = CustomUserSerializer.Meta.fields + (
+        fields = UserSerializer.Meta.fields + (
             'recipes',
             'recipes_count'
         )

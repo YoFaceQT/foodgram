@@ -90,15 +90,14 @@ class Recipe(models.Model):
             MinValueValidator(
                 MIN_COOKING_TIME,
                 message=(
-                    f'Время приготовления должно быть не менее '
-                    f'{MIN_COOKING_TIME} '
-                    f'{"минуты" if MIN_COOKING_TIME == 1 else "минут"}.'
+                    'Время приготовления должно быть не менее '
+                    f'{MIN_COOKING_TIME} минут.'
                 )
             ),
             MaxValueValidator(
                 MAX_COOKING_TIME,
                 message=(
-                    f'Время приготовления не должно превышать'
+                    'Время приготовления не должно превышать'
                     f'{MAX_COOKING_TIME} минут.'
                 )
             )
@@ -133,11 +132,8 @@ class Recipe(models.Model):
 
     def save(self, *args, **kwargs):
         """Переопределяем метод save для генерации short_code при создании."""
-        is_new = self.pk is None
-
-        if is_new:
-            if not self.short_code:
-                self.short_code = self.generate_short_code()
+        if not self.short_code:
+            self.short_code = self.generate_short_code()
 
         super().save(*args, **kwargs)
 
@@ -177,14 +173,14 @@ class IngredientInRecipe(models.Model):
             MinValueValidator(
                 MIN_INGREDIENT_AMOUNT,
                 message=(
-                    f'Количество ингредиента должно быть не менее '
+                    'Количество ингредиента должно быть не менее '
                     f'{MIN_INGREDIENT_AMOUNT}.'
                 )
             ),
             MaxValueValidator(
                 MAX_INGREDIENT_AMOUNT,
                 message=(
-                    f'Количество ингредиента не должно превышать '
+                    'Количество ингредиента не должно превышать '
                     f'{MAX_INGREDIENT_AMOUNT}.'
                 )
             )
@@ -192,9 +188,9 @@ class IngredientInRecipe(models.Model):
     )
 
     class Meta:
-        ordering = ('id',)
-        verbose_name = 'Количество'
-        verbose_name_plural = 'Количество'
+        ordering = ('ingredient__name',)
+        verbose_name = 'Ингредиент в рецепте'
+        verbose_name_plural = 'Ингредиенты в рецептах'
 
     def __str__(self):
         return f'{self.ingredient}'
@@ -217,6 +213,7 @@ class Cart(models.Model):
     )
 
     class Meta:
+        ordering = ('recipe__name',)
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
 
@@ -241,6 +238,7 @@ class Favorite(models.Model):
     )
 
     class Meta:
+        ordering = ('recipe__name',)
         verbose_name = 'Избранные рецепты'
         verbose_name_plural = 'Избранные рецепты'
 
