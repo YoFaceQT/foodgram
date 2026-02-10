@@ -3,7 +3,6 @@ import datetime
 from django.db.models import Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import HttpResponse, get_object_or_404
-from django.urls import reverse
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
