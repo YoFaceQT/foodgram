@@ -263,7 +263,7 @@ class ShortLinkRedirectView(View):
 
         base_url = request.build_absolute_uri('/')
         base_url = base_url.rstrip('/')
-        recipe_url = f"{base_url}/api/recipes/{recipe.id}/"
+        recipe_url = f"{base_url}/recipes/{recipe.id}/"
 
         return HttpResponseRedirect(recipe_url)
 
