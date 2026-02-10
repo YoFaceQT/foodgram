@@ -137,18 +137,6 @@ class Recipe(models.Model):
 
         super().save(*args, **kwargs)
 
-    def get_short_url(self, request=None):
-        """Возвращает короткую ссылку на рецепт."""
-        if not self.short_code:
-            return None
-
-        if request:
-            base_url = request.build_absolute_uri('/')
-            base_url = base_url.rstrip('/')
-            return f"{base_url}/s/{self.short_code}"
-        else:
-            return f"/s/{self.short_code}"
-
     class Meta:
         ordering = ('name',)
         verbose_name = 'рецепт'

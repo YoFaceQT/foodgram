@@ -3,6 +3,7 @@ import datetime
 from django.db.models import Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import HttpResponse, get_object_or_404
+from django.urls import reverse
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
@@ -245,8 +246,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def get_short_link(self, request, pk=None):
         """Получение короткой ссылки на рецепт."""
         recipe = get_object_or_404(Recipe, pk=pk)
+        base_url = request.build_absolute_uri('/')
+        base_url = base_url.rstrip('/')
+        short_link = f"{base_url}/s/{recipe.short_code}"
 
-        short_link = recipe.get_short_url(request)
         return Response({
             "short-link": short_link
         }, status=status.HTTP_200_OK)
@@ -258,11 +261,9 @@ class ShortLinkRedirectView(View):
     def get(self, request, short_code):
         """Перенаправляет на страницу рецепта по короткому коду."""
         recipe = get_object_or_404(Recipe, short_code=short_code)
-        base_url = request.build_absolute_uri('/')
-        base_url = base_url.rstrip('/')
-        recipe_url = f"{base_url}/recipes/{recipe.id}/"
-
-        return HttpResponseRedirect(recipe_url)
+        recipe_url = reverse('api:recipe-detail', kwargs={'pk': recipe.id})
+        full_url = request.build_absolute_uri(recipe_url)
+        return HttpResponseRedirect(full_url)
 
 
 class UserViewSet(UserViewSet):
