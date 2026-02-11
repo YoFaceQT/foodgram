@@ -77,7 +77,75 @@ sudo docker compose exec backend python manage.py createsuperuser
 sudo docker compose down -v      - с их удалением
 sudo docker compose stop         - без удаления
 ```
+**_Просмотр документации к API, находясь в папке infra/ выполнить команду_**
+```
+docker compose up
+```
+**_По адресу http://localhost изучите фронтенд веб-приложения, а по адресу http://localhost/api/docs/ — спецификацию API._**
 
+
+## Пример запросов/ответов
+**_Запрос_**
+```
+http://localhost/api/recipes/
+
+{
+  "ingredients": [
+    {
+      "id": 1123,
+      "amount": 10
+    }
+  ],
+  "tags": [
+    1,
+    2
+  ],
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg==",
+  "name": "string",
+  "text": "string",
+  "cooking_time": 1
+}
+```
+**_Ответ_**
+```
+http://localhost/api/recipes/
+
+Status code: 201
+
+{
+  "id": 0,
+  "tags": [
+    {
+      "id": 0,
+      "name": "Завтрак",
+      "slug": "breakfast"
+    }
+  ],
+  "author": {
+    "email": "user@example.com",
+    "id": 0,
+    "username": "string",
+    "first_name": "Вася",
+    "last_name": "Иванов",
+    "is_subscribed": false,
+    "avatar": "http://foodgram.example.org/media/users/image.png"
+  },
+  "ingredients": [
+    {
+      "id": 0,
+      "name": "Картофель отварной",
+      "measurement_unit": "г",
+      "amount": 1
+    }
+  ],
+  "is_favorited": true,
+  "is_in_shopping_cart": true,
+  "name": "string",
+  "image": "http://foodgram.example.org/media/recipes/images/image.png",
+  "text": "string",
+  "cooking_time": 1
+}
+```
 
 ## Автор backend:
 

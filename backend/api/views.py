@@ -343,17 +343,10 @@ class UserViewSet(UserViewSet):
     def avatar(self, request):
         """Загрузка, обновление или удаление аватара текущего пользователя."""
         user = request.user
-
-        if request.method in ['PUT']:
-            serializer = AvatarSerializer(
-                user,
-                data=request.data
-            )
-
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = AvatarSerializer(user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @avatar.mapping.delete
     def delete_avatar(self, request):
