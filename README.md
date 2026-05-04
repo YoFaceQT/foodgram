@@ -1,22 +1,26 @@
-# **_Foodgram_**
-«Фудграм» — сайт, на котором пользователи публикуют свои рецепты, добавляют чужие рецепты в избранное и подписываются на публикации других авторов. Зарегистрированным пользователям также доступен сервис «Список покупок», позволяющий создавать список продуктов для приготовления выбранных блюд.
-![status workflow](https://github.com/krivse/Foodgram_Workflow/actions/workflows/main.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![DjangoREST](https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens) ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) ![Gunicorn](https://img.shields.io/badge/gunicorn-%298729.svg?style=for-the-badge&logo=gunicorn&logoColor=white) ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
 
-### Используемые технологии
-#### Backend
-![Static Badge](https://img.shields.io/badge/Django-grey?style=plastic&logo=django&logoColor=white&labelColor=green) - Django  
-![Static Badge](https://img.shields.io/badge/PostgreSQL-grey?style=plastic&logo=Postgresql&logoColor=white&labelColor=blue) - PostgreSQL  
-![Static Badge](https://img.shields.io/badge/Django%20Rest%20Framework-grey?style=plastic&logo=API&logoColor=white&label=DRF&labelColor=red) - Django Rest Framework  
-#### Frontend
-![Static Badge](https://img.shields.io/badge/React-gray?style=plastic&logo=react&labelColor=blue) - ReactJS  
-![Static Badge](https://img.shields.io/badge/JavaScript-gray?style=plastic&logo=JavaScript&labelColor=yellow) - JavaScript  
-#### Infrastructure
-![Static Badge](https://img.shields.io/badge/NginX-gray?style=plastic&logo=nginx&labelColor=green) - NginX  
-![Static Badge](https://img.shields.io/badge/docker-grey?style=plastic&logo=docker&logoColor=white&labelColor=blue) - Docker  
+# **_Foodgram — бэкенд для сервиса публикации рецептов_**
+Foodgram — это социальный сервис, где пользователи могут делиться рецептами, подписываться на других авторов, добавлять рецепты в избранное и формировать список покупок. Моя задача заключалась в разработке полноценного бэкенда для SPA-приложения на React.
 
+### 🛠️ Используемые технологии
 
+- Python 3
 
-**_Ссылка на [проект](https://yofoodgram.duckdns.org/ "Гиперссылка к проекту.")_**  
+- Django REST Framework — каркас приложения и API
+
+- PostgreSQL — основная база данных
+
+- JWT-аутентификация (djangorestframework-simplejwt) — регистрация, вход, управление доступом
+
+- Docker — контейнеризация сервисов (бэкенд, БД, фронтенд, nginx)
+
+- Gunicorn, Nginx — продакшн-сервер и проксирование
+
+- GitHub Actions — CI/CD (автоматическое тестирование, сборка образов, деплой на сервер)
+
+**_Ссылка на [проект](https://yofoodgram.duckdns.org/ "Гиперссылка к проекту.")_**
+(**_На 04.05.2026 Ещё находится на удалённом сервере и работает._**)
 **_Ссылка на [админ-зону](https://yofoodgram.duckdns.org/admin "Гиперссылка к админке.")_**
 
 ## Проект состоит из следующих страниц
@@ -30,6 +34,49 @@
 - Список покупок  
 - Создание и редактирование рецепта  
 - Страница смены пароля  
+
+## 🔧 В раках учебного проекта выполнено: 
+
+### Модели и база данных:
+
+- Спроектированы модели: пользователь (расширенная кастомная модель), рецепт, ингредиент, тег, связь рецепт-ингредиент с количеством, подписки, избранное, список покупок.
+
+- Настроены связи «многие ко многим» с промежуточными моделями для точного учёта ингредиентов.
+
+### REST API (полностью соответствует предоставленной спецификации):
+
+- Реализованы все эндпоинты для пользователей, рецептов, ингредиентов, тегов, подписок, избранного, списка покупок.
+
+- Сериализаторы с валидацией данных (создание/редактирование рецептов, уникальность подписок и пр.).
+
+- Пагинация и динамическая фильтрация (по тегам, автору, нахождению в избранном/покупках).
+
+- Эндпоинт для скачивания списка покупок: ингредиенты автоматически суммируются по всем рецептам из списка покупок пользователя, результат отдаётся файлом (формат .txt или .pdf).
+
+### Аутентификация и права доступа:
+
+- Настроена регистрация, аутентификация по JWT-токенам, смена пароля.
+
+- Разграничены уровни доступа: гости (только чтение), авторизованные пользователи (создание рецептов, подписки, списки), администратор (управление тегами, ингредиентами, пользователями).
+
+- Для неавторизованных пользователей корректно возвращаются ошибки 401/403.
+
+### Дополнительный функционал:
+
+- Добавлена генерация прямой короткой ссылки на рецепт (не меняется при редактировании).
+
+- Работа с аватарами: загрузка, удаление, восстановление дефолтного изображения.
+
+- Статические страницы «О проекте» и «Технологии»: контент страниц управляется через админку или переменные, по умолчанию отключены (отдают 404).
+
+### Интеграция и инфраструктура:
+
+- Контейнеризированы все компоненты (Django-бэкенд, PostgreSQL, фронтенд на React, Nginx).
+
+- Настроен CI/CD: автотесты, сборка образов, деплой на сервер при пуше в main.
+
+- Проект успешно развёрнут на удалённом сервере, доступен по [домену](https://yofoodgram.duckdns.org/ "Гиперссылка к проекту.")_**.
+
 
 ## Как запустить проект с помощью Docker Compose
 **Клонировать репозиторий и перейти в него в командной строке:**
