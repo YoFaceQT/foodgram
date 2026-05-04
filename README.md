@@ -78,14 +78,25 @@ Foodgram — это социальный сервис, где пользоват
 - Проект успешно развёрнут на удалённом сервере, доступен по [домену](https://yofoodgram.duckdns.org/ "Гиперссылка к проекту.")_**.
 
 
+## Примеры страниц:
+
+### Главная:
+<img width="2000" height="2424" alt="image" src="https://github.com/user-attachments/assets/7e6027d5-7f06-4347-96fe-1fc73d537140" />
+
+### Страница рецепта:
+<img width="2000" height="1339" alt="Image" src="https://github.com/user-attachments/assets/34a0b24d-ef43-41cb-a58c-b63eb40284c0" />
+
+### Страница пользователя:
+<img width="2000" height="2412" alt="image" src="https://github.com/user-attachments/assets/d9512543-7426-4a08-9631-e6e9835317db" />
+
+
+
 ## Как запустить проект с помощью Docker Compose
 **Клонировать репозиторий и перейти в него в командной строке:**
 ```bash
 git clone git@github.com:YoFaceQT/foodgram.git
 ```
 
-
-
 > [!IMPORTANT]
 > Необходимо создать файл `.env` с переменными окружения в корневой папке проекта.</br>
 > Пример файла [.env.example](https://github.com/YoFaceQT/foodgram/blob/main/.env.example)
@@ -94,8 +105,7 @@ git clone git@github.com:YoFaceQT/foodgram.git
 > Пример файла [.env.example](https://github.com/YoFaceQT/foodgram/blob/main/.env.example)
 
 
-
-**Запустить докер композ**
+**Запустить docker compose**
 ```
 docker compose -f infra/docker-local.yml up -d --build
 ```
